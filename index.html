@@ -20,7 +20,7 @@
     
     @media print {
         * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        .lang-switcher, #actionButtons, .row-controls { display: none !important; }
+        .lang-switcher, #actionButtons, .row-controls, .charge-selector-box { display: none !important; }
         .app-container { border: none; box-shadow: none; width: 100%; max-width: 100%; }
         .main-content { display: flex !important; gap: 20px; }
     }
@@ -28,6 +28,7 @@
     .download-mode { max-width: 650px !important; width: 650px !important; }
     .download-mode .main-content { display: flex !important; gap: 15px; padding: 15px; align-items: flex-start; }
     .download-mode .summary-section { flex: 0.8; }
+    .download-mode .charge-selector-box { display: none !important; }
     
     .market-section, .main-content { position: relative; z-index: 1; }
     .market-section { padding: 12px; background: rgba(249, 249, 249, 0.7); border-bottom: 1px solid #eee; }
@@ -46,6 +47,10 @@
     .btn-row { width: 40px; height: 40px; border-radius: 50%; border: none; font-size: 24px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
     .btn-add { background: #1b5e20; }
     .btn-remove { background: #d32f2f; }
+
+    .charge-selector-box { padding: 10px; text-align: center; background: #fff9c4; border-bottom: 1px solid #fbc02d; }
+    .charge-select { padding: 8px; border-radius: 8px; border: 2px solid #b31d1d; font-weight: bold; font-size: 14px; background: white; cursor: pointer; outline: none; }
+
     .summary-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding: 8px; border-radius: 8px; border: 1px solid #eee; background: rgba(255, 255, 255, 0.9); }
     .summary-row span { font-weight: bold; font-size: 12px; display: inline-flex; align-items: center; white-space: nowrap; } 
     .highlight-green { background: rgba(232, 245, 233, 0.9); color: #2e7d32; border-color: #c8e6c9; }
@@ -73,7 +78,14 @@
 </div>
 
 <div class="app-container" id="reportArea">
-    <div class="spacer" style="padding-top: 20px;"></div>
+    
+    <div class="charge-selector-box">
+        <select id="chargeCalcMode" class="charge-select" onchange="calc()">
+            <option value="crate">ચાર્જ: પ્રતિ કેરેટ</option>
+            <option value="weight">ચાર્જ: પ્રતિ ૨૦ કિલો</option>
+        </select>
+    </div>
+
     <div class="market-section">
         <div class="input-group">
             <label id="lblDate">Date:</label>
@@ -146,9 +158,9 @@
 <script>
 let currentLang = 'en';
 const labels = {
-    gu: { date: "તારીખ:", farmer: "ખેડૂતનું નામ:", market: "માર્કેટ:", head: "<th>નં.</th><th>કેરેટ</th><th>વજન</th><th>20kg ભાવ</th><th>1kg ભાવ</th>", crates: "કુલ કેરેટ: ", weight: "વજન: ", ccharge: "કેરેટ ચાર્જ", bro: "કમિશન", texp: "કુલ ખર્ચ:", gross: "ગ્રોસ રકમ:", net: "નેટ રકમ:", prnt: "Print", ph_m: "માર્કેટનું નામ...", ph_f: "ખેડૂતનું નામ..." },
-    hi: { date: "दिनांक:", farmer: "किसान का नाम:", market: "मार्केट:", head: "<th>क्र.</th><th>कैरेट</th><th>वजन</th><th>20kg भाव</th><th>1kg भाव</th>", crates: "कुल कैरेट: ", weight: "वजन: ", ccharge: "कैरेट चार्ज", bro: "कमीशन", texp: "कुल खर्च:", gross: "कुल राशि:", net: "नेट राशि:", prnt: "Print", ph_m: "मार्केट का नाम...", ph_f: "किसान का नाम..." },
-    en: { date: "Date:", farmer: "Farmer Name:", market: "Market:", head: "<th>No.</th><th>Crate</th><th>Weight</th><th>20kg Rate</th><th>1kg Rate</th>", crates: "Total Crate: ", weight: "Weight: ", ccharge: "Crate Charge", bro: "Commission", texp: "Total Exp:", gross: "Gross Amt:", net: "Net Amt:", prnt: "Print", ph_m: "Market Name...", ph_f: "Farmer Name..." }
+    gu: { date: "તારીખ:", farmer: "ખેડૂતનું નામ:", market: "માર્કેટ:", head: "<th>નં.</th><th>કેરેટ</th><th>વજન</th><th>20kg ભાવ</th><th>1kg ભાવ</th>", crates: "કુલ કેરેટ: ", weight: "વજન: ", ccharge: "કેરેટ ચાર્જ", bro: "કમિશન", texp: "કુલ ખર્ચ:", gross: "ગ્રોસ રકમ:", net: "નેટ રકમ:", prnt: "Print", ph_m: "માર્કેટનું નામ...", ph_f: "ખેડૂતનું નામ...", mode1: "ચાર્જ: પ્રતિ કેરેટ", mode2: "ચાર્જ: પ્રતિ ૨૦ કિલો" },
+    hi: { date: "दिनांक:", farmer: "किसान का नाम:", market: "मार्केट:", head: "<th>क्र.</th><th>कैरेट</th><th>वजन</th><th>20kg भाव</th><th>1kg भाव</th>", crates: "कुल कैरेट: ", weight: "वजन: ", ccharge: "कैरेट चार्ज", bro: "कमीशन", texp: "कुल खर्च:", gross: "कुल राशि:", net: "नेट राशि:", prnt: "Print", ph_m: "मार्केट का नाम...", ph_f: "किसान का नाम...", mode1: "शुल्क: प्रति कैरेट", mode2: "शुल्क: प्रति ૨૦ किलो" },
+    en: { date: "Date:", farmer: "Farmer Name:", market: "Market:", head: "<th>No.</th><th>Crate</th><th>Weight</th><th>20kg Rate</th><th>1kg Rate</th>", crates: "Total Crate: ", weight: "Weight: ", ccharge: "Crate Charge", bro: "Commission", texp: "Total Exp:", gross: "Gross Amt:", net: "Net Amt:", prnt: "Print", ph_m: "Market Name...", ph_f: "Farmer Name...", mode1: "Charge: Per Crate", mode2: "Charge: Per 20kg" }
 };
 
 function initApp() {
@@ -175,6 +187,10 @@ function changeLang(lang) {
     document.getElementById('lblGross').innerText = labels[lang].gross;
     document.getElementById('lblNet').innerText = labels[lang].net;
     document.getElementById('btnPrint').innerText = labels[lang].prnt;
+
+    const modeSelect = document.getElementById('chargeCalcMode');
+    modeSelect.options[0].text = labels[lang].mode1;
+    modeSelect.options[1].text = labels[lang].mode2;
 }
 
 let rowCount = 0;
@@ -204,10 +220,21 @@ function calc(){
         let c = +document.getElementById("c"+g).value || 0, w = +document.getElementById("w"+g).value || 0, r1 = +document.getElementById("r1_"+g).value || 0;
         if(w > 0){ gt += (r1 * w); tw += w; tc += c; }
     }
-    let cc = tc * (+document.getElementById("ccr").value || 0), br = gt * (+document.getElementById("brp").value || 0) / 100, net = gt - (cc + br);
-    document.getElementById("total_cc").innerText = cc.toFixed(1);
-    document.getElementById("total_br").innerText = br.toFixed(1);
-    document.getElementById("total_exp").innerText = (cc + br).toFixed(1);
+
+    const calcMode = document.getElementById('chargeCalcMode').value;
+    const ratePerUnit = (+document.getElementById("ccr").value || 0);
+    
+    let cc = 0;
+    if(calcMode === 'crate') {
+        cc = tc * ratePerUnit; // Per Crate
+    } else {
+        cc = (tw / 20) * ratePerUnit; // Per 20kg
+    }
+
+    let br = gt * (+document.getElementById("brp").value || 0) / 100, net = gt - (cc + br);
+    document.getElementById("total_cc").innerText = cc.toFixed(2);
+    document.getElementById("total_br").innerText = br.toFixed(2);
+    document.getElementById("total_exp").innerText = (cc + br).toFixed(2);
     document.getElementById("total_crates").innerText = tc;
     document.getElementById("tw").innerText = tw.toFixed(2);
     document.getElementById("gt").innerText = Math.round(gt);

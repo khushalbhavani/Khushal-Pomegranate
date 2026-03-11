@@ -21,8 +21,11 @@
     @media print {
         * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         .lang-switcher, #actionButtons, .row-controls, .charge-selector-box { display: none !important; }
-        .app-container { border: none; box-shadow: none; width: 100%; max-width: 100%; }
-        .main-content { display: flex !important; gap: 20px; }
+        .app-container { border: 2px solid #b31d1d !important; border-radius: 20px !important; box-shadow: none; width: 650px !important; max-width: 650px !important; }
+        .main-content { display: flex !important; gap: 15px !important; padding: 15px !important; align-items: flex-start !important; }
+        .summary-section { flex: 0.8 !important; }
+        #ccr, #gcr, #brp { display: none !important; }
+        #ccr_text, #gcr_text, #brp_text { display: inline !important; }
     }
 
     .download-mode { max-width: 650px !important; width: 650px !important; }
@@ -50,6 +53,22 @@
 
     .charge-selector-box { padding: 10px; text-align: center; background: #fff9c4; border-bottom: 1px solid #fbc02d; }
     .charge-select { padding: 8px; border-radius: 8px; border: 2px solid #b31d1d; font-weight: bold; font-size: 14px; background: white; cursor: pointer; outline: none; }
+    .grading-select-warn { border: 2px solid #f57c00 !important; background: #fff3e0 !important; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{ box-shadow: 0 0 0 0 rgba(245,124,0,0.4); } 50%{ box-shadow: 0 0 0 4px rgba(245,124,0,0); } }
+    .grading-select-shake { animation: shake 0.4s ease; border: 2px solid #d32f2f !important; background: #ffebee !important; }
+    @keyframes shake { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(4px);} }
+    @keyframes bhokal-in { 0%{transform:translate(-50%,-50%) scale(0.2) rotate(-10deg);opacity:0;} 60%{transform:translate(-50%,-50%) scale(1.15) rotate(2deg);opacity:1;} 100%{transform:translate(-50%,-50%) scale(1) rotate(0deg);opacity:1;} }
+    @keyframes bhokal-bg { 0%,100%{background:rgba(183,28,28,0.93);} 25%{background:rgba(230,81,0,0.95);} 50%{background:rgba(183,28,28,0.93);} 75%{background:rgba(136,14,79,0.95);} }
+    @keyframes bhokal-icon { 0%,100%{transform:rotate(0deg) scale(1);} 25%{transform:rotate(-15deg) scale(1.3);} 75%{transform:rotate(15deg) scale(1.3);} }
+    @keyframes select-glow { 0%,100%{box-shadow:0 0 0 0 rgba(183,28,28,0);} 50%{box-shadow:0 0 12px 6px rgba(183,28,28,0.6);} }
+    .grading-select-glow { animation: select-glow 0.7s infinite !important; border: 2px solid #b31d1d !important; }
+    @keyframes diag-travel {
+        0%   { top:60%; left:30%; opacity:0;   transform:scaleX(0.4) rotate(-45deg); }
+        15%  { opacity:1;  transform:scaleX(2.2) rotate(-45deg); }
+        50%  { top:30%; left:58%; opacity:1;   transform:scaleX(1.0) rotate(-45deg); }
+        85%  { opacity:1;  transform:scaleX(2.0) rotate(-45deg); }
+        100% { top:2%;  left:82%; opacity:0;   transform:scaleX(0.4) rotate(-45deg); }
+    }
 
     .summary-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding: 8px; border-radius: 8px; border: 1px solid #eee; background: rgba(255, 255, 255, 0.9); }
     .summary-row span { font-weight: bold; font-size: 12px; display: inline-flex; align-items: center; white-space: nowrap; } 
@@ -66,7 +85,7 @@
     .share-options { display: none; position: absolute; bottom: 100%; left: 0; width: 100%; background: white; border: 1px solid #ddd; border-radius: 10px; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); margin-bottom: 5px; z-index: 100; overflow: hidden; }
     .share-opt-btn { padding: 12px; width: 100%; border: none; background: white; color: #333; font-weight: bold; cursor: pointer; border-bottom: 1px solid #eee; }
     .developer { text-align: center; padding: 10px; font-size: 11px; color: #999; border-top: 1px solid #eee; }
-    #ccr_text, #brp_text { color: #c62828; font-weight: bold; display: none; }
+    #ccr_text, #brp_text, #gcr_text { color: #c62828; font-weight: bold; display: none; }
 </style>
 </head>
 <body onload="initApp()">
@@ -78,11 +97,28 @@
 </div>
 
 <div class="app-container" id="reportArea">
+
+    <!-- SVG arrow: from table input area → grading select, 3 shots -->
+    <svg id="dirArrowSVG" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; z-index:30; pointer-events:none;" overflow="visible">
+        <defs>
+            <marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <polygon points="0 0, 8 4, 0 8" fill="#4a0000"/>
+            </marker>
+        </defs>
+        <line id="dirArrowLine" x1="30%" y1="68%" x2="30%" y2="68%"
+              stroke="#4a0000" stroke-width="5" stroke-linecap="round"
+              marker-end="url(#ah)" opacity="0"/>
+    </svg>
     
     <div class="charge-selector-box">
         <select id="chargeCalcMode" class="charge-select" onchange="calc()">
             <option value="crate">ચાર્જ: પ્રતિ કેરેટ</option>
             <option value="weight">ચાર્જ: પ્રતિ ૨૦ કિલો</option>
+        </select>
+        <select id="gradingMode" class="charge-select" onchange="onGradingChange()" style="margin-left:8px;">
+            <option value="">-- ગ્રેડિંગ પ્રકાર --</option>
+            <option value="khedut">ખેડૂત ગ્રેડિંગ</option>
+            <option value="mandi">મંડી ગ્રેડિંગ</option>
         </select>
     </div>
 
@@ -108,6 +144,15 @@
                 <div class="watermark-text">KHUSHAL</div>
                 <div class="watermark-text">BHAVANI</div>
             </div>
+            <div id="gradingWarningBanner" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; z-index:10; pointer-events:none;">
+                <!-- Warning message in center -->
+                <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:90%; animation:bhokal-in 0.5s cubic-bezier(.17,.67,.35,1.3) forwards; text-align:center;">
+                    <div style="background:rgba(183,28,28,0.93); animation:bhokal-bg 1.2s infinite; color:white; font-weight:900; font-size:15px; padding:16px 18px; border-radius:16px; box-shadow:0 0 0 4px rgba(255,255,255,0.3), 0 8px 30px rgba(0,0,0,0.5); border:2px solid rgba(255,255,255,0.4);">
+                        <div style="font-size:32px; animation:bhokal-icon 0.6s infinite; display:inline-block;">🚨</div>
+                        <div style="margin-top:4px; text-shadow:0 2px 6px rgba(0,0,0,0.4);"><span id="gradingWarnText">ગ્રેડિંગ પ્રકાર પસંદ કરો!</span></div>
+                    </div>
+                </div>
+            </div>
             <table>
                 <thead><tr id="tableHead"><th>No.</th><th>Crate</th><th>Weight</th><th>20kg Rate</th><th>1kg Rate</th></tr></thead>
                 <tbody id="tableBody"></tbody>
@@ -124,6 +169,11 @@
             <div class="summary-row highlight-red">
                 <span id="lblCrateCharge" style="flex: 1;">Crate Charge (₹<input id="ccr" value="15" style="width:25px; border:none; background:transparent; font-weight:bold; color: #c62828; padding:0; margin:0;" oninput="calc()"><span id="ccr_text">15</span>)</span>
                 <span id="total_cc">0</span>
+            </div>
+
+            <div class="summary-row highlight-red" id="gradingChargeRow" style="display:none;">
+                <span id="lblGradingCharge" style="flex: 1;">Grading Charge (₹<input id="gcr" value="10" style="width:25px; border:none; background:transparent; font-weight:bold; color: #c62828; padding:0; margin:0;" oninput="calc()"><span id="gcr_text">10</span>)</span>
+                <span id="total_gc">0</span>
             </div>
             
             <div class="summary-row highlight-red">
@@ -158,14 +208,15 @@
 <script>
 let currentLang = 'en';
 const labels = {
-    gu: { date: "તારીખ:", farmer: "ખેડૂતનું નામ:", market: "માર્કેટ:", head: "<th>નં.</th><th>કેરેટ</th><th>વજન</th><th>20kg ભાવ</th><th>1kg ભાવ</th>", crates: "કુલ કેરેટ: ", weight: "વજન: ", ccharge: "કેરેટ ચાર્જ", bro: "કમિશન", texp: "કુલ ખર્ચ:", gross: "ગ્રોસ રકમ:", net: "નેટ રકમ:", prnt: "Print", ph_m: "માર્કેટનું નામ...", ph_f: "ખેડૂતનું નામ...", mode1: "ચાર્જ: પ્રતિ કેરેટ", mode2: "ચાર્જ: પ્રતિ ૨૦ કિલો" },
-    hi: { date: "दिनांक:", farmer: "किसान का नाम:", market: "मार्केट:", head: "<th>क्र.</th><th>कैरेट</th><th>वजन</th><th>20kg भाव</th><th>1kg भाव</th>", crates: "कुल कैरेट: ", weight: "वजन: ", ccharge: "कैरेट चार्ज", bro: "कमीशन", texp: "कुल खर्च:", gross: "कुल राशि:", net: "नेट राशि:", prnt: "Print", ph_m: "मार्केट का नाम...", ph_f: "किसान का नाम...", mode1: "शुल्क: प्रति कैरेट", mode2: "शुल्क: प्रति ૨૦ किलो" },
-    en: { date: "Date:", farmer: "Farmer Name:", market: "Market:", head: "<th>No.</th><th>Crate</th><th>Weight</th><th>20kg Rate</th><th>1kg Rate</th>", crates: "Total Crate: ", weight: "Weight: ", ccharge: "Crate Charge", bro: "Commission", texp: "Total Exp:", gross: "Gross Amt:", net: "Net Amt:", prnt: "Print", ph_m: "Market Name...", ph_f: "Farmer Name...", mode1: "Charge: Per Crate", mode2: "Charge: Per 20kg" }
+    gu: { date: "તારીખ:", farmer: "ખેડૂતનું નામ:", market: "માર્કેટ:", head: "<th>નં.</th><th>કેરેટ</th><th>વજન</th><th>20kg ભાવ</th><th>1kg ભાવ</th>", crates: "કુલ કેરેટ: ", weight: "વજન: ", ccharge: "કેરેટ ચાર્જ", gcharge: "ગ્રેડિંગ ચાર્જ", bro: "કમિશન", texp: "કુલ ખર્ચ:", gross: "ગ્રોસ રકમ:", net: "નેટ રકમ:", prnt: "Print", ph_m: "માર્કેટનું નામ...", ph_f: "ખેડૂતનું નામ...", mode1: "ચાર્જ: પ્રતિ કેરેટ", mode2: "ચાર્જ: પ્રતિ ૨૦ કિલો", gmode0: "-- ગ્રેડિંગ પ્રકાર --", gmode1: "ખેડૂત ગ્રેડિંગ", gmode2: "મંડી ગ્રેડિંગ", gwarn: "ગ્રેડિંગ પ્રકાર પસંદ કરો!" },
+    hi: { date: "दिनांक:", farmer: "किसान का नाम:", market: "मार्केट:", head: "<th>क्र.</th><th>कैरेट</th><th>वजन</th><th>20kg भाव</th><th>1kg भाव</th>", crates: "कुल कैरेट: ", weight: "वजन: ", ccharge: "कैरेट चार्ज", gcharge: "ग्रेडिंग चार्ज", bro: "कमीशन", texp: "कुल खर्च:", gross: "कुल राशि:", net: "नेट राशि:", prnt: "Print", ph_m: "मार्केट का नाम...", ph_f: "किसान का नाम...", mode1: "शुल्क: प्रति कैरेट", mode2: "शुल्क: प्रति ૨૦ किलो", gmode0: "-- ग्रेडिंग प्रकार --", gmode1: "किसान ग्रेडिंग", gmode2: "मंडी ग्रेडिंग", gwarn: "ग्रेडिंग प्रकार चुनें!" },
+    en: { date: "Date:", farmer: "Farmer Name:", market: "Market:", head: "<th>No.</th><th>Crate</th><th>Weight</th><th>20kg Rate</th><th>1kg Rate</th>", crates: "Total Crate: ", weight: "Weight: ", ccharge: "Crate Charge", gcharge: "Grading Charge", bro: "Commission", texp: "Total Exp:", gross: "Gross Amt:", net: "Net Amt:", prnt: "Print", ph_m: "Market Name...", ph_f: "Farmer Name...", mode1: "Charge: Per Crate", mode2: "Charge: Per 20kg", gmode0: "-- Grading Type --", gmode1: "Farmer Grading", gmode2: "Mandi Grading", gwarn: "Please select Grading Type!" }
 };
 
 function initApp() {
     const savedLang = localStorage.getItem('userLanguage') || 'en';
     changeLang(savedLang);
+    document.getElementById('gradingMode').classList.add('grading-select-warn');
 }
 
 function changeLang(lang) {
@@ -182,6 +233,7 @@ function changeLang(lang) {
     document.getElementById('lblTotalCrates').firstChild.textContent = labels[lang].crates;
     document.getElementById('lblTotalWeight').firstChild.textContent = labels[lang].weight;
     document.getElementById('lblCrateCharge').firstChild.textContent = labels[lang].ccharge + " (₹";
+    document.getElementById('lblGradingCharge').firstChild.textContent = labels[lang].gcharge + " (₹";
     document.getElementById('lblBrokerage').firstChild.textContent = labels[lang].bro + " (";
     document.getElementById('lblTotalExp').innerText = labels[lang].texp;
     document.getElementById('lblGross').innerText = labels[lang].gross;
@@ -191,6 +243,12 @@ function changeLang(lang) {
     const modeSelect = document.getElementById('chargeCalcMode');
     modeSelect.options[0].text = labels[lang].mode1;
     modeSelect.options[1].text = labels[lang].mode2;
+
+    const gSelect = document.getElementById('gradingMode');
+    gSelect.options[0].text = labels[lang].gmode0;
+    gSelect.options[1].text = labels[lang].gmode1;
+    gSelect.options[2].text = labels[lang].gmode2;
+    document.getElementById('gradingWarnText').innerText = labels[lang].gwarn;
 }
 
 let rowCount = 0;
@@ -214,7 +272,110 @@ function updatePrice(id, type) {
     calc();
 }
 
+function onGradingChange() {
+    const gradingMode = document.getElementById('gradingMode').value;
+    const gSel = document.getElementById('gradingMode');
+    if(gradingMode === '') { gSel.classList.add('grading-select-warn'); }
+    else { gSel.classList.remove('grading-select-warn'); }
+    document.getElementById('gradingChargeRow').style.display = (gradingMode === 'mandi') ? 'flex' : 'none';
+    calc();
+}
+
+let travelRunning = false;
+function launchTravelArrow() {
+    if(travelRunning) return;
+    travelRunning = true;
+    document.getElementById('gradingMode').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const svg = document.getElementById('dirArrowSVG');
+    const line = document.getElementById('dirArrowLine');
+    const container = document.getElementById('reportArea');
+    const fromEl = (document.activeElement && document.activeElement.classList.contains('grid-input'))
+                    ? document.activeElement : document.getElementById('c1');
+    const toEl = document.getElementById('gradingMode');
+
+    // Save current scroll position, scroll up to show grading select
+    const savedScroll = window.scrollY;
+    toEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Wait for scroll to finish, then calculate positions and start arrow
+    setTimeout(() => {
+        const cRect = container.getBoundingClientRect();
+        const fRect = fromEl.getBoundingClientRect();
+        const tRect = toEl.getBoundingClientRect();
+        const sx = (fRect.left + fRect.width/2 - cRect.left) / cRect.width * 100;
+        const sy = (fRect.top + fRect.height/2 - cRect.top) / cRect.height * 100;
+        const ex = (tRect.left + tRect.width/2 - cRect.left) / cRect.width * 100;
+        const ey = (tRect.top + tRect.height/2 - cRect.top) / cRect.height * 100;
+        line.setAttribute('x1', sx+'%'); line.setAttribute('y1', sy+'%');
+        line.setAttribute('x2', sx+'%'); line.setAttribute('y2', sy+'%');
+        svg.style.display = 'block';
+        let shot = 0;
+        function doShot() {
+            if(shot >= 3) {
+                svg.style.display='none';
+                travelRunning=false;
+                // Scroll back to where user was
+                window.scrollTo({ top: savedScroll, behavior: 'smooth' });
+                return;
+            }
+            shot++;
+            const gs = performance.now();
+            function grow(now) {
+                const t = Math.min((now - gs) / 550, 1);
+                const e = 1 - Math.pow(1-t, 2);
+                line.setAttribute('x2', (sx+(ex-sx)*e)+'%');
+                line.setAttribute('y2', (sy+(ey-sy)*e)+'%');
+                line.setAttribute('opacity', (0.5+0.5*e).toString());
+                if(t < 1) { requestAnimationFrame(grow); } else {
+                    const ss = performance.now();
+                    function shrink(now2) {
+                        const t2 = Math.min((now2 - ss) / 350, 1);
+                        const e2 = t2*t2;
+                        line.setAttribute('x2', (ex+(sx-ex)*e2)+'%');
+                        line.setAttribute('y2', (ey+(sy-ey)*e2)+'%');
+                        line.setAttribute('opacity', (1-0.8*e2).toString());
+                        if(t2 < 1) { requestAnimationFrame(shrink); } else {
+                            line.setAttribute('x2', sx+'%'); line.setAttribute('y2', sy+'%');
+                            setTimeout(doShot, 180);
+                        }
+                    }
+                    requestAnimationFrame(shrink);
+                }
+            }
+            requestAnimationFrame(grow);
+        }
+        doShot();
+    }, 600);
+}
+
 function calc(){
+    const gradingMode = document.getElementById('gradingMode').value;
+    if(gradingMode === '') {
+        const gSel = document.getElementById('gradingMode');
+        gSel.classList.remove('grading-select-shake');
+        void gSel.offsetWidth;
+        gSel.classList.add('grading-select-shake');
+        setTimeout(() => { gSel.classList.remove('grading-select-shake'); gSel.classList.add('grading-select-warn'); }, 400);
+        // Show banner only if user is actually adding a value (not clearing)
+        let hasValue = false;
+        for(let g=1; g<=rowCount; g++){
+            if((+document.getElementById("c"+g).value||0) > 0 || (+document.getElementById("w"+g).value||0) > 0 || (+document.getElementById("r1_"+g).value||0) > 0) { hasValue = true; break; }
+        }
+        if(hasValue) {
+            const banner = document.getElementById('gradingWarningBanner');
+            const gSel = document.getElementById('gradingMode');
+            banner.style.display = 'block';
+            gSel.classList.add('grading-select-glow');
+            gSel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => {
+                banner.style.display = 'none';
+                gSel.classList.remove('grading-select-glow');
+            }, 3000);
+            launchTravelArrow();
+        }
+        return;
+    }
+
     let tw=0, gt=0, tc=0;
     for(let g=1; g<=rowCount; g++){
         let c = +document.getElementById("c"+g).value || 0, w = +document.getElementById("w"+g).value || 0, r1 = +document.getElementById("r1_"+g).value || 0;
@@ -231,10 +392,17 @@ function calc(){
         cc = (tw / 20) * ratePerUnit; // Per 20kg
     }
 
-    let br = gt * (+document.getElementById("brp").value || 0) / 100, net = gt - (cc + br);
+    let gc = 0;
+    if(gradingMode === 'mandi') {
+        if(calcMode === 'crate') { gc = tc * (+document.getElementById("gcr").value || 0); }
+        else { gc = (tw / 20) * (+document.getElementById("gcr").value || 0); }
+    }
+
+    let br = gt * (+document.getElementById("brp").value || 0) / 100, net = gt - (cc + br + gc);
     document.getElementById("total_cc").innerText = cc.toFixed(2);
+    document.getElementById("total_gc").innerText = gc.toFixed(2);
     document.getElementById("total_br").innerText = br.toFixed(2);
-    document.getElementById("total_exp").innerText = (cc + br).toFixed(2);
+    document.getElementById("total_exp").innerText = (cc + br + gc).toFixed(2);
     document.getElementById("total_crates").innerText = tc;
     document.getElementById("tw").innerText = tw.toFixed(2);
     document.getElementById("gt").innerText = Math.round(gt);
@@ -253,9 +421,11 @@ window.onclick = function(event) { if (!event.target.closest('.btn-share')) { do
 async function prepareForCapture() {
     const dIn = document.getElementById("dateInput"), dDis = document.getElementById("formattedDateDisplay"), rCon = document.getElementById("rowControls"), container = document.getElementById("reportArea");
     const cIn = document.getElementById("ccr"), cTx = document.getElementById("ccr_text");
+    const gIn = document.getElementById("gcr"), gTx = document.getElementById("gcr_text");
     const bIn = document.getElementById("brp"), bTx = document.getElementById("brp_text");
-    cTx.innerText = cIn.value; bTx.innerText = bIn.value;
+    cTx.innerText = cIn.value; bTx.innerText = bIn.value; gTx.innerText = gIn.value;
     cIn.style.display = "none"; cTx.style.display = "inline";
+    gIn.style.display = "none"; gTx.style.display = "inline";
     bIn.style.display = "none"; bTx.style.display = "inline";
 
     if(dIn.value) { 
@@ -264,13 +434,14 @@ async function prepareForCapture() {
         dIn.style.display = "none"; dDis.style.display = "block"; 
     }
     document.getElementById("actionButtons").style.display = "none"; rCon.style.display = "none"; container.classList.add("download-mode");
-    return { dIn, dDis, rCon, container, cIn, cTx, bIn, bTx };
+    return { dIn, dDis, rCon, container, cIn, cTx, gIn, gTx, bIn, bTx };
 }
 
 function revertCapture(ui) {
     ui.container.classList.remove("download-mode"); document.getElementById("actionButtons").style.display = "block"; ui.rCon.style.display = "flex";
     ui.dIn.style.display = "block"; ui.dDis.style.display = "none";
     ui.cIn.style.display = "inline-block"; ui.cTx.style.display = "none";
+    ui.gIn.style.display = "inline-block"; ui.gTx.style.display = "none";
     ui.bIn.style.display = "inline-block"; ui.bTx.style.display = "none";
 }
 
@@ -320,6 +491,9 @@ async function shareFile(type) {
 }
 
 function printBill() {
+    document.getElementById("ccr_text").innerText = document.getElementById("ccr").value;
+    document.getElementById("gcr_text").innerText = document.getElementById("gcr").value;
+    document.getElementById("brp_text").innerText = document.getElementById("brp").value;
     const dIn = document.getElementById("dateInput"), dDis = document.getElementById("formattedDateDisplay");
     if(dIn.value) { 
         let d = new Date(dIn.value); 
